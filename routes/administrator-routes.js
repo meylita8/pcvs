@@ -36,7 +36,9 @@ const {
     getVaccinations,
     getVaccination,
     updateVaccination,
-    deleteVaccination
+    deleteVaccination,
+    batchPendingView,
+    batchPendingSelectedView
 } = require('../controllers/adminitratorController');
 
 const router = express.Router();
@@ -51,6 +53,10 @@ router.get('/admin-center', urlencodedParser, signupCenterView);
 router.get('/admin-dashboard', urlencodedParser, dashboardView);
 router.get('/admin-logout', logout);
 router.get('/admin-batch', batchView);
+//
+router.get('/admin-batch-pending', batchPendingView);
+router.get('/admin-batch-selected', batchPendingSelectedView);
+//
 router.get('/admin-batch-create', batchCreateView);
 router.post('/admin-batch-create', urlencodedParser, createBatch);
 

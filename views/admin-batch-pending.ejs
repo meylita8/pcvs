@@ -42,10 +42,10 @@
                         <li class="nav-item">
                             <a href="admin-dashboard" class="nav-link">Dashboard</a>
                         </li>
-                        <li class="nav-item active">
+                        <li class="nav-item">
                             <a href="admin-batch" class="nav-link">Batch</a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item active">
                             <a href="admin-batch-pending?id=<%= user.healtCareCenterId %>" class="nav-link">View Batch</a>
                         </li>
                     </ul>
@@ -59,49 +59,37 @@
     </header>
 
     <main>
-        <div class="page-banner home-banner" style="height: 800px;">
-            <div class="container h-100">
-                <div class="row align-items-center h-100">
-                    <div class="col-lg-6 py-3 wow fadeInUp">
-                        <h1>Create Batch PCVS</h1>
-                        <h2>
-                            <%= vaccine.vaccineName %>
-                        </h2>
-                        <h4>
-                            Manufacturer :
-                            <%= vaccine.manufacturer %>
-                        </h4>
-                        <form action="admin-batch-create" method="post" name="myForm" onsubmit="return validateForm()">
-                            <input type="hidden" id="quantityAdministered" name="quantityAdministered" value=0>
-                            <input type="hidden" id="vaccineId" name="vaccineId" value="<%= vaccine.vaccineId %>">
-                            <input type="hidden" id="healtCareCenterId" name="healtCareCenterId" value="<%= healtcare %>">
-                            <div class="form-group">
-                                <label for="batchNo">Batch No</label>
-                                <input type="text" class="form-control" id="batchNo" placeholder="batchNo" name="batchNo" required="required">
-                            </div>
-                            <div class="form-group">
-                                <label for="expiryDate">Expiry Date</label>
-                                <input type="date" class="form-control" id="expiryDate" placeholder="expiryDate" name="expiryDate" required="required">
-                            </div>
-                            <div class="form-group">
-                                <label for="quantityAvailable">Quantity Available</label>
-                                <input type="number" class="form-control" id="quantityAvailable" placeholder="quantityAvailable" name="quantityAvailable" min="1">
-                            </div>
-                            <div class="row">
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary btn-block">Create</button>
+        <div class="page-section border-top">
+            <div class="container">
+                <div class="text-center wow fadeInUp">
+                    <div class="subhead">Select</div>
+                    <h2 class="title-section">Batch <span class="marked">Appointments</span></h2>
+                    <div class="divider mx-auto"></div>
+                </div>
+                <div class="row my-5 card-blog-row">
+                    <%  for (let pending of pendingList){ %>
+                        <div class="col-md-5 col-lg-3 py-3 wow fadeInUp">
+                            <div class="card-blog">
+                                <div class="body">
+                                    <div class="post-title">
+                                        <h5>Batch No. </h5>
+                                        <%= pending.batchNo %>
+                                    </div>
+                                    <div class="post-excerpt">
+                                        <br><br> Vacine Name :
+                                        <%= pending.vaccineName %><br> Number of Pending :
+                                            <%= pending.number %>
+                                    </div>
                                 </div>
-                                <!-- /.col -->
+                                <div class="footer">
+                                    <a href="admin-batch-selected?id=<%= pending.id %>">Select <span class="mai-chevron-forward text-sm"></span></a>
+                                </div>
                             </div>
-                        </form>
-                    </div>
-                    <div class="col-lg-6 py-3 wow zoomIn">
-                        <div class="img-place">
-                            <img src="../assets/img/bg_image_1.png" alt="">
                         </div>
-                    </div>
+                        <% } %>
                 </div>
             </div>
+            <!-- .container -->
         </div>
         <!-- .page-section -->
     </main>
@@ -158,26 +146,6 @@
 
     <script src="../assets/js/theme.js"></script>
 
-    <script>
-        function validateForm() {
-            let quantityAvailable = document.forms["myForm"]["quantityAvailable"].value;
-            if (quantityAvailable < 1) {
-                alert("Quantity Available Must Positive Number");
-                return false;
-            }
-            let expiryDate = document.forms["myForm"]["expiryDate"].value;
-            const dateVal = new Date(expiryDate);
-            const dateNow = new Date();
-            if (dateVal < dateNow) {
-                alert("Expiry Date Must Future Date");
-                return false;
-            }
-            if (expiryDate == "") {
-                alert("Expiry Date Cannot be null");
-                return false;
-            }
-        }
-    </script>
 
 </body>
 

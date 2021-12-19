@@ -61,7 +61,11 @@ const dashboardView = async(req, res, next) => {
             res.redirect('login');
         } else {
             const patient = await firestore.collection('patient').doc(req.session.userId).get();
-            res.render('dashboard', { user: patient.data() });
+            if (patient.data() === undefined) {
+                res.redirect('admin-dashboard');
+            } else {
+                res.render('dashboard', { user: patient.data() });
+            }
         }
     } catch (error) {
         res.status(400).send(error.message);
@@ -261,7 +265,7 @@ const createVaccination = async(req, res, next) => {
             res.redirect(url);
         } else {
             const { path } = await firestore.collection('vaccination').add(req.body);
-            await firestore.collection('vaccination').doc(path.split("/")[1]).update({ id: path.split("/")[1] });
+            await firestore.collection('vaccination').doc(path.split("/")[1]).update({ vaccinationId: path.split("/")[1] });
             const quatity = batch.data().quantityAvailable - 1;
             await firestore.collection('batch').doc(req.body.batchId).update({ quantityAvailable: quatity });
             res.redirect('/home')

@@ -154,8 +154,13 @@ const batchView = async(req, res, next) => {
 const batchCreateView = async(req, res, next) => {
     try {
         if (req.session.userId !== undefined) {
+            const admin = await firestore.collection('admin').doc(req.session.userId).get();
             const vaccine = await firestore.collection('vaccine').doc(req.query.id).get();
-            res.render('admin-batch', { vaccine: vaccine.data(), healtcare: req.query.healtcare });
+            res.render('admin-batch', {
+                vaccine: vaccine.data(),
+                healtcare: req.query.healtcare,
+                user: admin.data()
+            });
         } else {
             res.redirect('admin-dashboard');
         }
@@ -380,11 +385,13 @@ const getBatches = async(req, res, next) => {
         } else {
             batches.forEach(doc => {
                 const batch = new Batch(
-                    doc.data().vaccineId,
+                    doc.data().id,
                     doc.data().batchNo,
                     doc.data().expiryDate,
                     doc.data().quantityAvailable,
-                    doc.data().quantityAdministered
+                    doc.data().quantityAdministered,
+                    doc.data().healtCareCenterId,
+                    doc.data().vaccineId
                 );
                 batchList.push(batch);
             });
@@ -448,7 +455,9 @@ const getVaccinations = async(req, res, next) => {
                     doc.data().vaccinationId,
                     doc.data().appointmentDate,
                     doc.data().status,
-                    doc.data().remark
+                    doc.data().remark,
+                    doc.data().patientId,
+                    doc.data().batchId
                 );
                 vaccinationList.push(vaccination);
             });
@@ -490,6 +499,160 @@ const deleteVaccination = async(req, res, next) => {
     }
 }
 
+const batchPendingView = async(req, res, next) => {
+    try {
+        if (req.session.userId === undefined) {
+            res.redirect('admin-login');
+        } else {
+            try {
+                const admin = await firestore.collection('admin').doc(req.session.userId).get();
+                const batches = await firestore.collection('batch').where("healtCareCenterId", "==", req.query.id).get();
+                const vaccinations = await firestore.collection('vaccination').where("status", "==", "pending").get();
+                const vaccines = await firestore.collection('vaccine').get();
+                const batchListTemp = [];
+                const vaccineList = [];
+                const pendingList = [];
+                if (batches.empty) {
+                    res.status(404).send('No batch');
+                } else {
+                    batches.forEach(doc => {
+                        const batch = new Batch(
+                            doc.data().id,
+                            doc.data().batchNo,
+                            doc.data().expiryDate,
+                            doc.data().quantityAvailable,
+                            doc.data().quantityAdministered,
+                            doc.data().healtCareCenterId,
+                            doc.data().vaccineId
+                        );
+                        batchListTemp.push(batch);
+                    });
+                    vaccines.forEach(doc => {
+                        const vaccine = new Vaccine(
+                            doc.data().vaccineId,
+                            doc.data().manufacturer,
+                            doc.data().vaccineName
+                        );
+                        vaccineList.push(vaccine);
+                    });
+
+                    vaccinations.forEach(doc => {
+                        batchListTemp.forEach(element => {
+                            if (doc.data().batchId == element.id) {
+                                if (pendingList.length < 1) {
+                                    vaccineList.forEach(element1 => {
+                                        if (element1.vaccineId == element.vaccineId) {
+                                            pendingList.push({
+                                                id: doc.data().batchId,
+                                                batchNo: element.batchNo,
+                                                vaccineName: element1.vaccineName,
+                                                number: 1
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    var status = 0;
+                                    for (let i = 0; i < pendingList.length; i++) {
+                                        if (pendingList[i].id == doc.data().batchId) {
+                                            console.log(pendingList[i].id)
+                                            var num = pendingList[i].number + 1;
+                                            vaccineList.forEach(element1 => {
+                                                if (element1.vaccineId == element.vaccineId) {
+                                                    pendingList[i] = {
+                                                        id: doc.data().batchId,
+                                                        batchNo: element.batchNo,
+                                                        vaccineName: element1.vaccineName,
+                                                        number: num
+                                                    }
+                                                }
+                                            });
+                                            status = 1
+                                        }
+                                    }
+                                    if (status == 0) {
+                                        vaccineList.forEach(element1 => {
+                                            if (element1.vaccineId == element.vaccineId) {
+                                                pendingList.push({
+                                                    id: doc.data().batchId,
+                                                    batchNo: element.batchNo,
+                                                    vaccineName: element1.vaccineName,
+                                                    number: 1
+                                                })
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    res.render('admin-batch-pending', {
+                        user: admin.data(),
+                        pendingList: pendingList
+                    });
+                }
+            } catch (error) {
+                res.status(400).send(error.message);
+            }
+        }
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+}
+
+const batchPendingSelectedView = async(req, res, next) => {
+    try {
+        if (req.session.userId === undefined) {
+            res.redirect('admin-login');
+        } else {
+            const admin = await firestore.collection('admin').doc(req.session.userId).get();
+            const batch = await firestore.collection('batch').doc(req.query.id).get();
+            const vaccinations = await firestore.collection('vaccination').where("status", "==", "pending").get();
+            const vaccinationsConfirm = await firestore.collection('vaccination').where("status", "in", ["confirmed", "administered", "rejected"]).get();
+            const vaccinationList = [];
+            var numPending = 0;
+
+            vaccinations.forEach(doc => {
+                if (doc.data().batchId == batch.data().id) {
+                    const vaccination = new Vaccination(
+                        doc.data().vaccinationId,
+                        doc.data().appointmentDate,
+                        doc.data().status,
+                        doc.data().remark,
+                        doc.data().patientId,
+                        doc.data().batchId
+                    );
+                    vaccinationList.push(vaccination);
+                    numPending++;
+                }
+            });
+
+            vaccinationsConfirm.forEach(doc => {
+                if (doc.data().batchId == batch.data().id) {
+                    const vaccination = new Vaccination(
+                        doc.data().vaccinationId,
+                        doc.data().appointmentDate,
+                        doc.data().status,
+                        doc.data().remark,
+                        doc.data().patientId,
+                        doc.data().batchId
+                    );
+                    vaccinationList.push(vaccination);
+                }
+            });
+
+
+            res.render('admin-batch-vaccination', {
+                user: admin.data(),
+                numPending: numPending,
+                batch: batch.data(),
+                vaccinationList: vaccinationList
+            });
+        }
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+}
 module.exports = {
     indexView,
     loginView,
@@ -524,5 +687,7 @@ module.exports = {
     getVaccinations,
     getVaccination,
     updateVaccination,
-    deleteVaccination
+    deleteVaccination,
+    batchPendingView,
+    batchPendingSelectedView
 }
