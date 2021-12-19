@@ -26,9 +26,9 @@ const loginView = async(req, res, next) => {
     try {
         if (req.session.userId === undefined) {
             if (req.query.id !== undefined && req.query.vaccineId !== undefined) {
-                res.render('login', { id: req.query.id, vaccineId: req.query.vaccineId });
+                res.render('login', { id: req.query.id, vaccineId: req.query.vaccineId, message: "" });
             } else {
-                res.render('login', { id: undefined, vaccineId: undefined });
+                res.render('login', { id: undefined, vaccineId: undefined, message: "" });
             }
         } else if (req.session.userId !== undefined && req.session.healtcareId !== undefined) {
             if (req.query.id !== undefined && req.query.vaccineId !== undefined) {
@@ -46,7 +46,7 @@ const loginView = async(req, res, next) => {
 const signupView = async(req, res, next) => {
     try {
         if (req.session.userId === undefined) {
-            res.render('signup');
+            res.render('signup', {message: ""});
         } else {
             res.redirect('dashboard');
         }
@@ -111,7 +111,11 @@ const getAdminByEmailPassword = async(req, res, next) => {
                 res.redirect('dashboard');
             }
         } else {
-            res.redirect('dashboard');
+            if (req.session.userId === undefined) {
+                res.render('login', {id: undefined, vaccineId: undefined, message: "Incorrect username or password."});
+            }else{
+                res.redirect('dashboard');
+            }
         }
     } catch (error) {
         res.status(400).send(error.message);
@@ -153,7 +157,20 @@ const selectHealtcareView = async(req, res, next) => {
             res.status(404).send('No user');
         } else {
             batchs.forEach(doc => {
-                stringHealtcare.push(doc.data().healtCareCenterId);
+                if(stringHealtcare.length < 1){
+                    stringHealtcare.push(doc.data().healtCareCenterId);
+                }
+                else{
+                    var addVal = 0;
+                    stringHealtcare.forEach(element => {
+                        if(element == doc.data().healtCareCenterId){
+                            addVal = 1;
+                        }
+                    });
+                    if(addVal == 0){
+                        stringHealtcare.push(doc.data().healtCareCenterId);
+                    }
+                }
             });
             healtcarecenters.forEach(doc => {
                 stringHealtcare.forEach(element => {
@@ -278,10 +295,21 @@ const createVaccination = async(req, res, next) => {
 // Patient CRUD
 const createPatient = async(req, res, next) => {
     try {
-        const { path } = await firestore.collection('patient').add(req.body);
-        req.session.userId = path.split("/")[1];
-        await firestore.collection('patient').doc(req.session.userId).update({ id: req.session.userId });
-        res.redirect('dashboard')
+        const patients = await firestore.collection('patient').get();
+        var create = 0;
+        
+        patients.forEach(doc => {
+            if(doc.data().email == req.body.email){
+                res.render('signup', { message: "Email already exist" });
+                create = 1;
+            }
+        });
+        if(create == 0){
+            const { path } = await firestore.collection('patient').add(req.body);
+            req.session.userId = path.split("/")[1];
+            await firestore.collection('patient').doc(req.session.userId).update({ id: req.session.userId });
+            res.redirect('dashboard')
+        }
     } catch {
         res.redirect('dashboard')
     }

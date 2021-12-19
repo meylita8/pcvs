@@ -61,9 +61,10 @@
                 <div class="row align-items-center h-100">
                     <div class="col-lg-6 py-3 wow fadeInUp">
                         <h1 class="mb-4">Login Patient PCVS</h1>
+                        <h5 style="color: red;"><%= message %></h5>
                         <form action="login" method="post">
                             <div class="input-group mb-3">
-                                <input type="email" class="form-control" placeholder="Email" name="email" id="email">
+                                <input type="email" class="form-control" placeholder="Email" name="email" id="email" required="required">
                                 <div class="input-group-append">
                                     <div class="input-group-text">
                                         <span class="fas fa-envelope"></span>
@@ -71,7 +72,7 @@
                                 </div>
                             </div>
                             <div class="input-group mb-3">
-                                <input type="password" class="form-control" placeholder="Password" name="password" id="password">
+                                <input type="password" class="form-control" placeholder="Password" name="password" id="password" required="required">
                                 <div class="input-group-append">
                                     <div class="input-group-text">
                                         <span class="fas fa-lock"></span>

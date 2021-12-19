@@ -25,7 +25,7 @@ const indexView = async(req, res, next) => {
 const loginView = async(req, res, next) => {
     try {
         if (req.session.userId === undefined) {
-            res.render('admin-login');
+            res.render('admin-login', {message: ""});
         } else {
             res.redirect('admin-dashboard');
         }
@@ -61,7 +61,7 @@ const signupView = async(req, res, next) => {
         if (req.session.userId === undefined) {
             const center = await firestore.collection('healtcarecenter').doc(req.query.id).get();
             console.log(center.data());
-            res.render('admin-signup', { center: center.data() });
+            res.render('admin-signup', { center: center.data(), message:"" });
         } else {
             res.redirect('admin-dashboard');
         }
@@ -114,7 +114,11 @@ const getAdminByEmailPassword = async(req, res, next) => {
                 }
             });
         }
-        res.redirect('admin-dashboard');
+        if (req.session.userId === undefined) {
+            res.render('admin-login', {message: "Incorrect username or password."});
+        }else{
+            res.redirect('admin-dashboard');
+        }
     } catch (error) {
         res.status(400).send(error.message);
     }
@@ -172,10 +176,22 @@ const batchCreateView = async(req, res, next) => {
 // Admin CRUD
 const createAdmin = async(req, res, next) => {
     try {
-        const { path } = await firestore.collection('admin').add(req.body);
-        req.session.userId = path.split("/")[1];
-        await firestore.collection('admin').doc(req.session.userId).update({ id: req.session.userId });
-        res.redirect('/admin-dashboard')
+        const admins = await firestore.collection('admin').get();
+        const center = await firestore.collection('healtcarecenter').doc(req.body.healtCareCenterId).get();
+        var create = 0;
+        
+        admins.forEach(doc => {
+            if(doc.data().email == req.body.email){
+                res.render('admin-signup', { center: center.data(), message: "Email already exist" });
+                create = 1;
+            }
+        });
+        if(create == 0){
+            const { path } = await firestore.collection('admin').add(req.body);
+            req.session.userId = path.split("/")[1];
+            await firestore.collection('admin').doc(req.session.userId).update({ id: req.session.userId });
+            res.redirect('/admin-dashboard')
+        }
     } catch {
         res.redirect('/admin-dashboard')
     }
