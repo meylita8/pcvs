@@ -653,6 +653,90 @@ const batchPendingSelectedView = async(req, res, next) => {
         res.status(400).send(error.message);
     }
 }
+
+const batchPendingDetailView = async(req, res, next) => {
+    try {
+        if (req.session.userId === undefined) {
+            res.redirect('admin-login');
+        } else {
+            const admin = await firestore.collection('admin').doc(req.session.userId).get();
+            const vaccination = await firestore.collection('vaccination').doc(req.query.id).get();
+            const batch = await firestore.collection('batch').doc(vaccination.data().batchId).get();
+            const patient = await firestore.collection('patient').doc(vaccination.data().patientId).get();
+            const vaccine = await firestore.collection('vaccine').doc(batch.data().vaccineId).get();
+
+            if (vaccination.data().status == "confirmed") {
+                res.render('admin-batch-administered', {
+                    user: admin.data(),
+                    vaccination: vaccination.data(),
+                    batch: batch.data(),
+                    patient: patient.data(),
+                    vaccine: vaccine.data()
+                });
+            } else if (vaccination.data().status == "rejected" || vaccination.data().status == "administered") {
+                res.render('admin-batch-admin-reject', {
+                    user: admin.data(),
+                    vaccination: vaccination.data(),
+                    batch: batch.data(),
+                    patient: patient.data(),
+                    vaccine: vaccine.data()
+                });
+            } else {
+                res.render('admin-batch-detail', {
+                    user: admin.data(),
+                    vaccination: vaccination.data(),
+                    batch: batch.data(),
+                    patient: patient.data(),
+                    vaccine: vaccine.data()
+                });
+            }
+        }
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+}
+
+const batchconfirm = async(req, res, next) => {
+    try {
+        if (req.session.userId === undefined) {
+            res.redirect('admin-login');
+        } else {
+            await firestore.collection('vaccination').doc(req.query.id).update({ status: "confirmed" });
+            res.redirect('/admin');
+        }
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+}
+
+const batchreject = async(req, res, next) => {
+    try {
+        if (req.session.userId === undefined) {
+            res.redirect('admin-login');
+        } else {
+            await firestore.collection('vaccination').doc(req.body.vaccinationId).update({ status: "rejected", remark: req.body.remark });
+            res.redirect('/admin');
+        }
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+}
+
+const batchAdministered = async(req, res, next) => {
+    try {
+        if (req.session.userId === undefined) {
+            res.redirect('admin-login');
+        } else {
+            await firestore.collection('vaccination').doc(req.body.vaccinationId).update({ status: "administered", remark: req.body.remark });
+            var val = parseInt(req.body.batchAdmin) + 1;
+            await firestore.collection('batch').doc(req.body.batchId).update({ quantityAdministered: val });
+            res.redirect('/admin');
+        }
+    } catch (error) {
+        res.status(400).send(error.message);
+    }
+}
+
 module.exports = {
     indexView,
     loginView,
@@ -689,5 +773,9 @@ module.exports = {
     updateVaccination,
     deleteVaccination,
     batchPendingView,
-    batchPendingSelectedView
+    batchPendingSelectedView,
+    batchPendingDetailView,
+    batchconfirm,
+    batchreject,
+    batchAdministered
 }
