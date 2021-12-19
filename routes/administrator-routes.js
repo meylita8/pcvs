@@ -38,7 +38,11 @@ const {
     updateVaccination,
     deleteVaccination,
     batchPendingView,
-    batchPendingSelectedView
+    batchPendingSelectedView,
+    batchPendingDetailView,
+    batchconfirm,
+    batchreject,
+    batchAdministered
 } = require('../controllers/adminitratorController');
 
 const router = express.Router();
@@ -56,6 +60,10 @@ router.get('/admin-batch', batchView);
 //
 router.get('/admin-batch-pending', batchPendingView);
 router.get('/admin-batch-selected', batchPendingSelectedView);
+router.get('/admin-batch-detail', batchPendingDetailView);
+router.get('/admin-batch-confirm', batchconfirm);
+router.post('/admin-batch-reject', urlencodedParser, batchreject);
+router.post('/admin-batch-administered', urlencodedParser, batchAdministered);
 //
 router.get('/admin-batch-create', batchCreateView);
 router.post('/admin-batch-create', urlencodedParser, createBatch);
