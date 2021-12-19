@@ -65,12 +65,14 @@
                         <h4>Quantity :
                             <%= batch.quantityAvailable %>
                         </h4>
-                        <form action="create-vaccination" method="post">
+                        <form action="create-vaccination" method="post" name="myForm" onsubmit="return validateForm()">
                             <div class="form-group">
                                 <label for="appointmentDate">Appointment Date</label>
-                                <input type="date" class="form-control" id="appointmentDate" placeholder="appointmentDate" name="appointmentDate">
+                                <input type="date" class="form-control" id="appointmentDate" placeholder="appointmentDate" name="appointmentDate" required="required">
                             </div>
                             <input type="hidden" id="status" name="status" value="pending">
+                            <input type="hidden" id="expiryDate" name="expiryDate" value="<%= batch.expiryDate %>">
+                            <input type="hidden" id="quantityAvailable" name="quantityAvailable" value="<%= batch.quantityAvailable %>">
                             <input type="hidden" id="remark" name="remark" value="unprocessed">
                             <input type="hidden" id="patientId" name="patientId" value="<%= patient %>">
                             <input type="hidden" id="batchId" name="batchId" value="<%= batch.id %>">
@@ -145,6 +147,33 @@
 
     <script src="../assets/js/theme.js"></script>
 
+    <script>
+        function validateForm() {
+            let quantityAvailable = document.forms["myForm"]["quantityAvailable"].value;
+            if (quantityAvailable < 1) {
+                alert("Vaccine is not available");
+                return false;
+            }
+
+            let expiryDate = document.forms["myForm"]["expiryDate"].value;
+            let appointmentDate = document.forms["myForm"]["appointmentDate"].value;
+            const expiryDateVal = new Date(expiryDate);
+            const appointmentDateVal = new Date(appointmentDate);
+            const dateNow = new Date();
+            if (appointmentDateVal > expiryDateVal) {
+                alert("Date must between expiry date and today");
+                return false;
+            }
+            else if(appointmentDateVal < dateNow){
+                alert("Date must between expiry date and today");
+                return false;
+            }
+            if (expiryDate == "") {
+                alert("Expiry Date Cannot be null");
+                return false;
+            }
+        }
+    </script>
 
 </body>
 
